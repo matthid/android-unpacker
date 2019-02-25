@@ -79,6 +79,17 @@ int main(int argc, char *argv[]) {
 
     found_packer = determine_packer(pid, mem_file);
   }
+
+  char *filter = NULL;
+  memory_region *memory[128] = { 0, 0 };
+  if (found_packer == NULL) {
+     int found = find_magic_memory(clone_pid, mem_file, memory, filter);
+     if(found <= 0) {
+       printf(" [!] Nothing found in service_pid! Falling back to clone_pid\n");
+       mem_file = attach_get_memory(clone_pid);
+     } 
+  }
+
   if(found_packer != NULL && strcmp(found_packer->name, "Bangle Test") == 0) {
     printf("  [+] Since filter is Bangle Test, switching to look at the pid attached to service_pid, %d\n", tracer);
     clone_pid = tracer;
@@ -89,12 +100,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  char *filter = NULL;
   if(found_packer != NULL) {
     filter = found_packer->filter;
   }
 
-  memory_region *memory[128] = { 0, 0 };
   int found = find_magic_memory(clone_pid, mem_file, memory, filter);
   if(found <= 0) {
     printf(" [!] Something unexpected happened, new version of packer/protectors? Or it wasn't packed/protected!\n");
